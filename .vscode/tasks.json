@@ -1,0 +1,41 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "${workspaceFolder}/Improving-your-CSharp-Skills_by_Packt/_01_BenchmarkDotNet/_01_BenchmarkDotNet.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "publish",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "publish",
+        "${workspaceFolder}/Improving-your-CSharp-Skills_by_Packt/_01_BenchmarkDotNet/_01_BenchmarkDotNet.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "watch",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "watch",
+        "run",
+        "--project",
+        "${workspaceFolder}/Improving-your-CSharp-Skills_by_Packt/_01_BenchmarkDotNet/_01_BenchmarkDotNet.csproj"
+      ],
+      "problemMatcher": "$msCompile"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/dotnet
+{
+	"name": "Test_C#",
+	"image": "mcr.microsoft.com/devcontainers/dotnet:0-7.0",
+
+  "postCreateCommand": "/workspaces/Test_CSharp/.devcontainer/postCreateCmd.sh"
+}
