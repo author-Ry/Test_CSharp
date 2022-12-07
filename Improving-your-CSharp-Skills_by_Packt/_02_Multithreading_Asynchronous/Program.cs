@@ -1,5 +1,5 @@
 ﻿using MyThreadTest;
-
+using MyTaskParallelLibraryTest;
 public static class Program
 {
   public static void Main()
@@ -41,6 +41,9 @@ public static class Program
 
     // async/await キーワードを用いたTAP実装
     AsyncAwaitKeywordTest.AsyncAwaitKeywordTestRun();
+
+    // タスクを細かく制御するTAP実装
+    TaskCompletionSourceTest.TaskCompletionSourceRun();
 
     Console.Read();
   }

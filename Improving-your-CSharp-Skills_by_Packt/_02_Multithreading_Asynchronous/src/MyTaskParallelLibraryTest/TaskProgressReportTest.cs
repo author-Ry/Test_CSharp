@@ -1,4 +1,4 @@
-namespace MyThreadTest
+namespace MyTaskParallelLibraryTest
 {
   public static class TaskProgressReportTest
   {
