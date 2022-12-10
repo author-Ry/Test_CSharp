@@ -1,5 +1,7 @@
 ﻿using MyThreadTest;
 using MyTaskParallelLibraryTest;
+using MyTPLPatternTest;
+
 public static class Program
 {
   public static void Main()
@@ -44,6 +46,21 @@ public static class Program
 
     // タスクを細かく制御するTAP実装
     TaskCompletionSourceTest.TaskCompletionSourceRun();
+
+    // TPL Pipeline Pattern
+    PipelinePatternTest.PipelinePatternTestRun();
+
+    // TPL Dataflow Pattern
+    DataflowPatternTest.DataflowPatternTestRun();
+
+    // TPL Producer/Consumer Pattern
+    ProducerConsumerPatternTest.ProducerConsumerPatternTestRun();
+
+    // Parallel.ForEach（マルチスレッド用ループ）
+    ParallelForEachTest.ParallelForEachTestRun();
+
+    // LINQ.AsParallel
+    ParallelLINQTest.ParallelLINQTestRun();
 
     Console.Read();
   }
