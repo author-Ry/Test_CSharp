@@ -12,17 +12,11 @@ namespace _03_Securing_ImplementingResilience.Controllers;
 public class ImplementingTheRetryPatternController : Controller
 {
   HttpClient _client;
-  public ImplementingTheRetryPatternController()
-  {
-    _client = new HttpClient();
-  }
 
-  [HttpGet]
-  public bool PostImplementingTheRetryPatternTest()
+  public ImplementingTheRetryPatternController(HttpClient client)
   {
-    return true;
+    _client = client;
   }
-  
 
   /// <summary>
   /// 再試行パターンのテスト
@@ -30,15 +24,15 @@ public class ImplementingTheRetryPatternController : Controller
   [HttpPost]
   public async Task PostImplementingTheRetryPatternTest([FromBody]User user)
   {
-    // Email service URL（実際には機能しない。また別で稼働しているマイクロサービス想定）
-    string emailServiceUrl = "http://localhost:5270/api/Email";
+    // Email service URL（実際には機能しない。別で稼働しているマイクロサービス想定）
+    string emailServiceUrl = "http://localhost:5270/TestEmail";
     
     // ユーザ情報をjsonに変換
     HttpContent content = new StringContent(JsonConvert.SerializeObject(user));
 
     // Content-Type を application/json に
-    _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-    
+    content.Headers.ContentType = new MediaTypeWithQualityHeaderValue("application/json");
+
     // リクエスト再試行回数
     int maxRetries = 3;
 
