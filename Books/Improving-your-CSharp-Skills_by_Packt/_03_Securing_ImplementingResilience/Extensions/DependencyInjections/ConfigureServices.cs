@@ -1,6 +1,8 @@
 using Polly;
 using Polly.CircuitBreaker;
 
+using _03_Securing_ImplementingResilience.Services;
+
 namespace _03_Securing_ImplementingResilience.DependencyInjections;
 
 public static class ConfigureServices
@@ -15,6 +17,9 @@ public static class ConfigureServices
       );
     services.AddSingleton<HttpClient>();
     services.AddSingleton<CircuitBreakerPolicy<HttpResponseMessage>>(circuitBreakerPolicy);
+    
+    // 再試行ポリシー & サーキットブレーカーポリシーを適用したHttpClient
+    services.AddSingleton<IResilientHttpClient, ResilientHttpClient>();
   }
 
   private static void OnBreak(DelegateResult<HttpResponseMessage> responseMessage, TimeSpan timeSpan) 
