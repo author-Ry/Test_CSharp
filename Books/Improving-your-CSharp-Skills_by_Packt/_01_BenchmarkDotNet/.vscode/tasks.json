@@ -7,7 +7,7 @@
       "type": "process",
       "args": [
         "build",
-        "${workspaceFolder}/Improving-your-CSharp-Skills_by_Packt/_01_BenchmarkDotNet/_01_BenchmarkDotNet.csproj",
+        "${workspaceFolder}/_01_BenchmarkDotNet.csproj",
         "/property:GenerateFullPaths=true",
         "/consoleloggerparameters:NoSummary"
       ],
@@ -19,7 +19,7 @@
       "type": "process",
       "args": [
         "publish",
-        "${workspaceFolder}/Improving-your-CSharp-Skills_by_Packt/_01_BenchmarkDotNet/_01_BenchmarkDotNet.csproj",
+        "${workspaceFolder}/_01_BenchmarkDotNet.csproj",
         "/property:GenerateFullPaths=true",
         "/consoleloggerparameters:NoSummary"
       ],
@@ -33,7 +33,7 @@
         "watch",
         "run",
         "--project",
-        "${workspaceFolder}/Improving-your-CSharp-Skills_by_Packt/_01_BenchmarkDotNet/_01_BenchmarkDotNet.csproj"
+        "${workspaceFolder}/_01_BenchmarkDotNet.csproj"
       ],
       "problemMatcher": "$msCompile"
     }
