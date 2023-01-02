@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using Polly;
 using Polly.CircuitBreaker;
 using Polly.Fallback;
+using Polly.Timeout;
 using Polly.Wrap;
 
 namespace _03_Securing_ImplementingResilience.Services;
@@ -17,7 +18,10 @@ public interface IResilientHttpClient
   HttpResponseMessage Delete(string uri);
 
   // フォールバックポリシー（有）
-  HttpResponseMessage PostFallback<T>(string uri, T item);  
+  HttpResponseMessage PostFallback<T>(string uri, T item);
+
+  // タイムアウトポリシー（有）
+  HttpResponseMessage PostTimeout<T>(string uri, T item);
 }
 
 public class ResilientHttpClient : IResilientHttpClient
@@ -29,6 +33,9 @@ public class ResilientHttpClient : IResilientHttpClient
   // Fallback Policy
   FallbackPolicy<HttpResponseMessage> _fallbackPolicy;
   FallbackPolicy<HttpResponseMessage> _fallbackCircuitBreakerPolicy;
+
+  // TimeOut Policy
+  TimeoutPolicy<HttpResponseMessage> _timeoutPolicy;
 
   public ResilientHttpClient(HttpClient client, CircuitBreakerPolicy<HttpResponseMessage> circuitBreakerPolicy)
   {
@@ -62,24 +69,42 @@ public class ResilientHttpClient : IResilientHttpClient
       .Fallback(new HttpResponseMessage(HttpStatusCode.OK) {
         Content = new StringContent("Some error occured")
       });
+
+    // タイムアウトポリシーの初期化
+    _timeoutPolicy = Policy.Timeout<HttpResponseMessage>(1);
   }
 
   /// <summary>
-  /// 再試行ポリシーでラップしたサーキットブレーカーポリシーで実行
+  /// 再試行 & サーキットブレーカー ポリシーで実行
   /// </summary>
-  public HttpResponseMessage ExecuteWithRetryAndCircuitBreaker(string uri, Func<HttpResponseMessage> func)
+  public HttpResponseMessage Execute_With_Retry_CircuitBreaker(string uri, Func<HttpResponseMessage> func)
   {
     var res = _retryPolicy.Wrap(_circuitBreakerPolicy).Execute(() => func());
     return res;
   }
 
   /// <summary>
-  /// フォールバックポリシーを適用した再試行 & サーキットブレーカー で実行
+  /// フォールバック & 再試行 & サーキットブレーカー ポリシーで実行
   /// </summary>
-  public HttpResponseMessage ExecuteWithFallbackPolicyAndRetryAndCircuitBreaker(string uri, Func<HttpResponseMessage> func)
+  public HttpResponseMessage Execute_With_Fallback_Retry_CircuitBreaker(string uri, Func<HttpResponseMessage> func)
   {
     // サーキットブレーカーを、再試行ポリシーでラップ
     PolicyWrap<HttpResponseMessage> resiliencePolicyWrap = Policy.Wrap(_retryPolicy, _circuitBreakerPolicy);
+    
+    // 再試行ポリシーでラップされたサーキットブレーカーを、フォールバックポリシーでラップ
+    PolicyWrap<HttpResponseMessage> fallbackPolicyWrap = _fallbackPolicy.Wrap(_fallbackCircuitBreakerPolicy.Wrap(resiliencePolicyWrap));
+    
+    var res = fallbackPolicyWrap.Execute(() => func());
+    return res;
+  }
+
+  /// <summary>
+  /// タイムアウト & フォールバック & 再試行 & サーキットブレーカー ポリシーで実行
+  /// </summary>
+  public HttpResponseMessage Execute_With_Timeout_Fallback_Retry_CircuitBreaker(string uri, Func<HttpResponseMessage> func)
+  {
+    // ポリシーをラップ: タイムアウト（再試行（サーキットブレーカー））
+    PolicyWrap<HttpResponseMessage> resiliencePolicyWrap = Policy.Wrap(_timeoutPolicy, _retryPolicy, _circuitBreakerPolicy);
     
     // 再試行ポリシーでラップされたサーキットブレーカーを、フォールバックポリシーでラップ
     PolicyWrap<HttpResponseMessage> fallbackPolicyWrap = _fallbackPolicy.Wrap(_fallbackCircuitBreakerPolicy.Wrap(resiliencePolicyWrap));
@@ -93,7 +118,7 @@ public class ResilientHttpClient : IResilientHttpClient
   /// </summary>
   public HttpResponseMessage Get(string uri)
   {
-    return ExecuteWithRetryAndCircuitBreaker(uri, () => {
+    return Execute_With_Retry_CircuitBreaker(uri, () => {
       try
       {
         var requestMessage = new HttpRequestMessage(HttpMethod.Get, uri);
@@ -116,7 +141,7 @@ public class ResilientHttpClient : IResilientHttpClient
   /// </summary>
   public HttpResponseMessage Post<T>(string uri, T item)
   {
-    return ExecuteWithRetryAndCircuitBreaker(uri, () => {
+    return Execute_With_Retry_CircuitBreaker(uri, () => {
       try
       {
         var requestMessage = new HttpRequestMessage(HttpMethod.Post, uri);
@@ -141,7 +166,7 @@ public class ResilientHttpClient : IResilientHttpClient
   /// </summary>
   public HttpResponseMessage Put<T>(string uri, T item)
   {
-    return ExecuteWithRetryAndCircuitBreaker(uri, () => {
+    return Execute_With_Retry_CircuitBreaker(uri, () => {
       try
       {
         var requestMessage = new HttpRequestMessage(HttpMethod.Put, uri);
@@ -166,7 +191,7 @@ public class ResilientHttpClient : IResilientHttpClient
   /// </summary>
   public HttpResponseMessage Delete(string uri)
   {
-    return ExecuteWithRetryAndCircuitBreaker(uri, () => {
+    return Execute_With_Retry_CircuitBreaker(uri, () => {
       try
       {
         var requestMessage = new HttpRequestMessage(HttpMethod.Delete, uri);
@@ -189,7 +214,32 @@ public class ResilientHttpClient : IResilientHttpClient
   /// </summary>
   public HttpResponseMessage PostFallback<T>(string uri, T item)
   {
-    return ExecuteWithFallbackPolicyAndRetryAndCircuitBreaker(uri, () => {
+    return Execute_With_Fallback_Retry_CircuitBreaker(uri, () => {
+      try
+      {
+        var requestMessage = new HttpRequestMessage(HttpMethod.Post, uri);
+
+        requestMessage.Content = new StringContent(JsonConvert.SerializeObject(item), Encoding.UTF8, "application/json");
+
+        var response = _client.SendAsync(requestMessage).Result;
+
+        return response;
+      }
+      catch (Exception)
+      {
+        HttpResponseMessage res = new HttpResponseMessage();
+        res.StatusCode = HttpStatusCode.InternalServerError;
+        return res;
+      }
+    });
+  }
+
+  /// <summary>
+  /// [HttpPost] タイムアウトポリシー & フォールバックポリシー & 再試行ポリシー & サーキットブレーカーポリシー
+  /// </summary>
+  public HttpResponseMessage PostTimeout<T>(string uri, T item)
+  {
+    return Execute_With_Timeout_Fallback_Retry_CircuitBreaker(uri, () => {
       try
       {
         var requestMessage = new HttpRequestMessage(HttpMethod.Post, uri);

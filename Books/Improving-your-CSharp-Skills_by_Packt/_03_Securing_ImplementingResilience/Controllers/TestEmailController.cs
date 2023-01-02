@@ -28,4 +28,16 @@ public class TestEmailController : Controller
 
     return Ok(await content.ReadAsStringAsync());
   }
+
+  [HttpPost("Unavailable")]
+  public async Task<IActionResult> PostUnavailable([FromBody]User user)
+  {
+    // ユーザ情報をjsonに変換
+    HttpContent content = new StringContent(JsonConvert.SerializeObject(user));
+
+    // 10秒後にエラー
+    await Task.Run(() => Thread.Sleep(TimeSpan.FromSeconds(10)));
+    throw new Exception("Timeout");
+  }
+
 }
